@@ -10,7 +10,6 @@ import re
 import time
 import random
 import requests
-from download_task import DownloadTask,DownloadInfo
 
 """
 注意运行前请修改 make_dir() 中的下载路径！不要过度爬取，仅供测试学习！
@@ -99,12 +98,10 @@ class XiMa(object):
         max_page = re.findall(r'<input type="number" placeholder="请输入页码" step="1" min="1" '
                               r'max="(\d+)" class="control-input _bfuk" value=""/>', r_fm_url.text, re.S)
 
-        maxPage = 1 if max_page ==None or len(max_page)==0 else int(max_page[0])
-        downloadTask = DownloadTask(fm_path,self.header)
         #if max_page and max_page[0]:
         if True:
             #for page in range(1, int(max_page[0]) + 1):
-            for page in range(1, maxPage + 1):
+            for page in range(1, 1 + 1):
                 print('第' + str(page) + '页')
                 self.get_sign()
                 r = self.s.get(self.base_api.format(xm_fm_id, page), headers=self.header)
@@ -113,12 +110,9 @@ class XiMa(object):
                 for audio in r_json['data']['tracksAudioPlay']:
                     audio_title = str(audio['trackName']).replace(' ', '')
                     audio_src = audio['src']
-                    downloadTask.putTask(DownloadInfo(audio_src,audio_title))
-                    #self.get_detail(audio_title, audio_src, fm_path)
+                    self.get_detail(audio_title, audio_src, fm_path)
                 # 每爬取1页，30个音频，休眠3秒
                 time.sleep(3)
-            
-            downloadTask.run()
         else:
             print(os.error)
 
