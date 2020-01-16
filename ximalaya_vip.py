@@ -10,6 +10,7 @@ import re
 import time
 import random
 import requests
+from lxml import etree
 
 """
 注意请修改 make_dir() 中的下载路径
@@ -19,7 +20,7 @@ import requests
 class XiMa(object):
     def __init__(self):
         self.base_url = 'https://www.ximalaya.com'
-        self.base_api = 'https://www.ximalaya.com/revision/play/album?albumId={}&pageNum={}&sort=0&pageSize=30'
+        self.base_api = 'https://www.ximalaya.com/revision/play/album?albumId={}&pageNum={}&sort=0&pageSize=30&sign={}'
         self.time_api = 'https://www.ximalaya.com/revision/time'
         # 获取付费节目总音源个数与节目名
         self.pay_api = 'https://www.ximalaya.com/revision/album?albumId={}'
@@ -51,11 +52,11 @@ class XiMa(object):
         """
         nowtime = str(round(time.time() * 1000))
         servertime = self.get_time()
-        sign = str(hashlib.md5("ximalaya-{}".format(servertime).encode()).hexdigest()) + "({})".format(
+        sign = str(hashlib.md5("himalaya-{}".format(servertime).encode()).hexdigest()) + "({})".format(
             str(round(random.random() * 100))) + servertime + "({})".format(str(round(random.random() * 100))) + nowtime
         self.header["xm-sign"] = sign
         # print(sign)
-        # return sign
+        return sign
 
     def index_choose(self):
         c_num = input(u'请输入对应操作的选项：\n'
@@ -83,7 +84,7 @@ class XiMa(object):
     @staticmethod
     def make_dir(xm_fm_id):
         # 保存路径，请自行修改，这里是以有声书ID作为文件夹的路径
-        fm_path = 'F:\\{}\\'.format(xm_fm_id)
+        fm_path = 'e:\\{}\\'.format(xm_fm_id)
         f = os.path.exists(fm_path)
         if not f:
             os.makedirs(fm_path)
@@ -97,18 +98,21 @@ class XiMa(object):
         fm_url = self.base_url + '/youshengshu/{}'.format(xm_fm_id)
         print(fm_url)
         r_fm_url = self.s.get(fm_url, headers=self.header)
-        fm_title = re.findall('<h1 class="title _leU">(.*?)</h1>', r_fm_url.text, re.S)[0]
-        print('书名：' + fm_title)
+        isVip = self.is_vip(r_fm_url.text)
+        fm_title = ''
+        #fm_title = re.findall('<h1 class="title _leU">(.*?)</h1>', r_fm_url.text, re.S)[0]
+        #print('书名：' + fm_title)
         # 新建有声书ID的文件夹
         fm_path = self.make_dir(xm_fm_id)
         # 取最大页数
         max_page = re.findall(r'<input type="number" placeholder="请输入页码" step="1" min="1" '
                               r'max="(\d+)" class="control-input _bfuk" value=""/>', r_fm_url.text, re.S)
-        if max_page and max_page[0]:
-            for page in range(1, int(max_page[0]) + 1):
+        max_page = 1
+        if max_page and max_page>0:
+            for page in range(1, 2):#int(max_page[0]) + 1):
                 print('第' + str(page) + '页')
-                self.get_sign()
-                r = self.s.get(self.base_api.format(xm_fm_id, page), headers=self.header)
+                sign = self.get_sign()
+                r = self.s.get(self.base_api.format(xm_fm_id, page,sign), headers=self.header)
                 # print(json.loads(r.text))
                 r_json = json.loads(r.text)
                 for audio in r_json['data']['tracksAudioPlay']:
@@ -119,6 +123,15 @@ class XiMa(object):
                 time.sleep(3)
         else:
             print(os.error)
+
+    def is_vip(self, html):
+        nodes = re.findall(r'<div class="price-btn _Kv(+)">', html, re.S)
+    
+        if nodes != None and len(nodes)>0:
+            return True
+        else:
+            return False
+
 
     def get_pay_fm(self, xm_fm_id):
         # 根据有声书ID构造url
@@ -142,7 +155,7 @@ class XiMa(object):
                 audio_title = str(track['title']).replace(' ', '')
                 audio_src = self.pay_api_single.format(audio_id)
                 print(audio_title, audio_src)
-                # self.get_detail(audio_title, audio_src, fm_path)
+                self.get_detail(audio_title, audio_src, fm_path)
                 # 每爬取1页，30个音频，休眠1~3秒
                 time.sleep(random.randint(1, 3))
         else:

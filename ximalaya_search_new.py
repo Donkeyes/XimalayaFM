@@ -18,6 +18,7 @@ from download_task import DownloadTask,DownloadInfo
 
 
 class XiMa(object):
+
     def __init__(self):
         self.base_url = 'https://www.ximalaya.com'
         self.base_api = 'https://www.ximalaya.com/revision/play/album?albumId={}&pageNum={}&sort=0&pageSize=30'
@@ -45,8 +46,8 @@ class XiMa(object):
         sign = str(hashlib.md5("himalaya-{}".format(servertime).encode()).hexdigest()) + "({})".format(
             str(round(random.random() * 100))) + servertime + "({})".format(str(round(random.random() * 100))) + nowtime
         self.header["xm-sign"] = sign
-        # print(sign)
-        # return sign
+        #print(sign)
+        return sign
 
     def index_choose(self):
         c_num = input(u'请输入对应操作的选项：\n'
